@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import './App.css';
 
 function App() {
-  const [tasks, setTasks] = useState([]);
-  const [newTask, setNewTask] = useState({ title: '', description: '' });
-  const [editingTask, setEditingTask] = useState(null); // For editing
+  const [tasks, setTasks] = useState([]); // Tasks list
+  const [newTask, setNewTask] = useState({ title: '', description: '', priority: '' });
+  const [editingTask, setEditingTask] = useState(null); // For editing tasks
 
   // Fetch tasks
   useEffect(() => {
@@ -12,13 +13,17 @@ function App() {
   }, []);
 
   const fetchTasks = () => {
-    axios.get('http://localhost:5000/tasks').then((res) => setTasks(res.data));
+    axios.get('http://localhost:5000/tasks').then((res) => {
+      // Sort tasks by priority (ascending: 1 is highest)
+      const sortedTasks = res.data.sort((a, b) => a.priority - b.priority);
+      setTasks(sortedTasks);
+    });
   };
 
   // Add task
   const addTask = () => {
     axios.post('http://localhost:5000/tasks', newTask).then(() => {
-      setNewTask({ title: '', description: '' });
+      setNewTask({ title: '', description: '', priority: '' });
       fetchTasks();
     });
   };
@@ -43,7 +48,7 @@ function App() {
 
   return (
     <div style={{ padding: '20px' }}>
-      <h1>TaskFlow Pro</h1>
+      <h1>TaskFlow Pro - Priority Queue</h1>
 
       {/* Add Task Section */}
       <div>
@@ -56,6 +61,12 @@ function App() {
           placeholder="Description"
           value={newTask.description}
           onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+        />
+        <input
+          type="number"
+          placeholder="Priority (1 is highest)"
+          value={newTask.priority}
+          onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
         />
         <button onClick={addTask}>Add Task</button>
       </div>
@@ -74,6 +85,12 @@ function App() {
             value={editingTask.description}
             onChange={(e) => setEditingTask({ ...editingTask, description: e.target.value })}
           />
+          <input
+            type="number"
+            placeholder="Priority (1 is highest)"
+            value={editingTask.priority}
+            onChange={(e) => setEditingTask({ ...editingTask, priority: e.target.value })}
+          />
           <button onClick={updateTask}>Update Task</button>
           <button onClick={() => setEditingTask(null)}>Cancel</button>
         </div>
@@ -83,8 +100,10 @@ function App() {
       <ul>
         {tasks.map((task) => (
           <li key={task.id}>
-            <b>{task.title}</b>: {task.description} | Status: {task.status}
-            <button onClick={() => startEditing(task)}>Edit</button>
+            <b>{task.title}</b> 
+            <button className="edit" onClick={() => startEditing(task)}>
+              Edit
+            </button>
             <button onClick={() => deleteTask(task.id)}>Delete</button>
           </li>
         ))}
